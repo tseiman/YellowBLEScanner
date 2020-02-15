@@ -1,0 +1,15 @@
+cflags:
+{
+}
+
+requires:
+{
+	api:
+	{
+	}
+}
+
+sources:
+{
+	main.c
+}

@@ -1,0 +1,35 @@
+executables:
+{
+	YellowBLEScanner = ( ComponentYellowBLEScanner )
+}
+
+processes:
+{
+	envVars:
+	{
+		LE_LOG_LEVEL = DEBUG
+	}
+
+	run:
+	{
+		( YellowBLEScanner )
+	}
+
+	maxCoreDumpFileBytes: 512K
+	maxFileBytes: 512K
+}
+requires:
+{
+
+    device:
+    {
+    }
+}
+
+version: 1.0.0
+maxFileSystemBytes: 512K
+maxMemoryBytes: 32000K
+bindings:
+{
+    
+}
