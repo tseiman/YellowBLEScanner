@@ -21,15 +21,41 @@ processes:
 requires:
 {
 
+  file:
+  {
+    /usr/lib/libgio-2.0.so.0 /lib/libgio-2.0.so.0
+	/usr/lib/libgobject-2.0.so.0 /lib/libgobject-2.0.so.0
+	/usr/lib/libglib-2.0.so.0 /lib/libglib-2.0.so.0
+	/usr/lib/libffi.so.6 /lib/libffi.so.6
+	/usr/lib/libgmodule-2.0.so.0 /lib/libgmodule-2.0.so.0
+	/usr/lib/libpcre.so.1 /lib/libpcre.so.1
+	/lib/libz.so.1 /lib/libz.so.1
+	/lib/libresolv.so.2 /lib/libresolv.so.2
+	/lib/libmount.so.1 /lib/libmount.so.1
+	/lib/libblkid.so.1 /lib/libblkid.so.1
+	/lib/libuuid.so.1 /lib/libuuid.so.1
+//	/usr/lib/libgio-2.0.so.0.5400.3 
+  }
+
     device:
     {
     }
+}
+bundles:
+{
+  file:
+  {
+//    [rx] /usr/lib/libgio-2.0.so.0
+//	[rx] /usr/lib/libgio-2.0.so.0.5400.3
+  }
 }
 
 version: 1.0.0
 maxFileSystemBytes: 512K
 maxMemoryBytes: 32000K
+sandboxed: false
 bindings:
 {
-    
+	YellowBLEScanner.ComponentYellowBLEScanner.io -> dataHub.io
+//    YellowBLEScanner.ComponentYellowBLEScanner.dhubIO -> dataHub.io
 }
