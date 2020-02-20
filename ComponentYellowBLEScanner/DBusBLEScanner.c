@@ -10,34 +10,31 @@
 #include "org.bluez.GattDescriptor1.h"
 
 #include "DBusBLEScanner.h"
+#include "global.h"
+
 
 static GDBusObjectManager *BluezObjectManager = NULL;
 static BluezAdapter1 *AdapterInterface = NULL;
-static BluezDevice1 *SensorTagDeviceInterface = NULL;
+static BluezDevice1 *BLEStationDeviceInterface = NULL;
 
-GDBusConnection *con;
+static DeviceUpdate_Callback_t updateCallback = NULL;
+static DeviceDelete_Callback_t deleteCallback = NULL;
+
+// static GDBusConnection *con;
+static GMainLoop *glibMainLoop;
 
 static enum ApplicationState
 {
     APP_STATE_INIT,
     APP_STATE_SEARCHING_FOR_ADAPTER,
-    APP_STATE_POWERING_ON_ADAPTER,
-    APP_STATE_SEARCHING_FOR_SENSORTAG,
-    APP_STATE_SEARCHING_FOR_ATTRIBUTES,
-    APP_STATE_SAMPLING
+    APP_STATE_POWERING_ON_ADAPTER ,
+    APP_STATE_SEARCHING_FOR_BLE_STATION //,
+  //  APP_STATE_SEARCHING_FOR_ATTRIBUTES,
+  //  APP_STATE_SAMPLING
 } AppState = APP_STATE_INIT;
 
 
 
-
-void yel_ble_stopScan() {
-
-}
-
-int yel_ble_startScan() {
-
-    return 0;
-}
 
 static gboolean LegatoFdHandler (GIOChannel *source, GIOCondition condition, gpointer data) {
     while (true) {
@@ -53,7 +50,7 @@ static gboolean LegatoFdHandler (GIOChannel *source, GIOCondition condition, gpo
 
 
 GType BluezProxyTypeFunc(GDBusObjectManagerClient *manager, const gchar *objectPath, const gchar *interfaceName, gpointer userData) {
-
+    FUNC_CALL_DEBUG;
     if (interfaceName == NULL) 
         return g_dbus_object_proxy_get_type();
     
@@ -75,85 +72,68 @@ GType BluezProxyTypeFunc(GDBusObjectManagerClient *manager, const gchar *objectP
 
 
 
-static void BeginSensorTagSearch(void) {
-    LE_DEBUG("------->>>> BeginSensorTagSearch()");
-    AppState = APP_STATE_SEARCHING_FOR_SENSORTAG;
+static void BeginBLEStationSearch(void) {
+    FUNC_CALL_DEBUG;
+    AppState = APP_STATE_SEARCHING_FOR_BLE_STATION;
     GError *error = NULL;
     LE_DEBUG("Starting device discovery");
     bluez_adapter1_call_start_discovery_sync(AdapterInterface, NULL, &error);
     LE_FATAL_IF(error != NULL, "Couldn't start discovery - %s", error->message);
 
     GList *bluezObjects = g_dbus_object_manager_get_objects(BluezObjectManager);
-    for (GList *node = bluezObjects; node != NULL && SensorTagDeviceInterface == NULL;  node = node->next) {
+    for (GList *node = bluezObjects; node != NULL && BLEStationDeviceInterface == NULL;  node = node->next) {
         GDBusObject *obj = node->data;
-
-  //      SensorTagDeviceInterface = TryCreateSensorTagDeviceProxy(obj);
 
         BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(obj, "org.bluez.Device1"));
         if (dev != NULL)    {
-            const gchar *deviceName = bluez_device1_get_name(dev);
-            const gchar *deviceAddr = bluez_device1_get_address(dev);
-            const gchar *deviceAddrType = bluez_device1_get_address_type(dev);
-            const gint16 deviceRSSI = bluez_device1_get_rssi(dev);
+            struct BLE_Scan_s scandata;
+            scandata.name = (char *) bluez_device1_get_name(dev);
+            scandata.addr = (char *) bluez_device1_get_address(dev);
+            scandata.type = (char *) bluez_device1_get_address_type(dev);
+            scandata.rssi = bluez_device1_get_rssi(dev);
 
-            LE_INFO("-----> found device addr: %s (%s), with RSSI %d, and name: %s", deviceAddr,deviceAddrType, deviceRSSI, deviceName);
+#ifdef BLE_DEBUG
+            LE_DEBUG("-----> found device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
+#endif
+            if(updateCallback != NULL) {
+                updateCallback(&scandata);
+            } else {
+                LE_WARN("Callback for BLE scan update is not set. No Action happened.");
+            }
+
         }
-/*        if (SensorTagDeviceInterface != NULL)
-        {
-            SensorTagFoundHandler();
-        } */
     }
     g_list_free_full(bluezObjects, g_object_unref);
 }
 
 
-static void AdapterPropertiesChangedHandler( GDBusProxy *proxy, GVariant *changedProperties, GStrv invalidatedProperties, gpointer userData) {
-    LE_DEBUG("------->>>> AdapterPropertiesChangedHandler()");
-    LE_DEBUG("%s - AppState=%d", __func__, AppState);
-    if (AppState == APP_STATE_POWERING_ON_ADAPTER)   {
-        GVariant *poweredVal =      g_variant_lookup_value(changedProperties, "Powered", G_VARIANT_TYPE_BOOLEAN);
-        if (poweredVal != NULL) {
-            gboolean powered = g_variant_get_boolean(poweredVal);
-            g_variant_unref(poweredVal);
-            LE_DEBUG("Adapter Powered property = %d", powered);
-            if (powered) {
-                BeginSensorTagSearch();
-            } 
-        }
-    }
-}
-
-
-static void AdapterFoundHandler(void){
-         LE_DEBUG("------->>>> AdapterFoundHandler()");
-    // Ensure the adapter is powered on
-    if (!bluez_adapter1_get_powered(AdapterInterface))
-    {
-        AppState = APP_STATE_POWERING_ON_ADAPTER;
-        LE_DEBUG("Adapter not powered - powering on");
-        g_signal_connect(AdapterInterface,"g-properties-changed",G_CALLBACK(AdapterPropertiesChangedHandler), NULL);
-        bluez_adapter1_set_powered(AdapterInterface, TRUE);
-    } else {
-        LE_DEBUG("Adapter already powered");
-        BeginSensorTagSearch();
-    }
-}
-
 
 static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
-        LE_DEBUG("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
+    // FUNC_CALL_DEBUG;
+#ifdef BLE_DEBUG
+    LE_DEBUG("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
+#endif
 
     BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
     if (dev != NULL)    {
-        const gchar *deviceName = bluez_device1_get_name(dev);
-        const gchar *deviceAddr = bluez_device1_get_address
-        (dev);
-        const gchar *deviceAddrType = bluez_device1_get_address_type(dev);
-        const gint16 deviceRSSI = bluez_device1_get_rssi(dev);
+
+        struct BLE_Scan_s scandata;
+
+        scandata.name = (char *) bluez_device1_get_name(dev);
+        scandata.addr = (char *) bluez_device1_get_address(dev);
+        scandata.type = (char *) bluez_device1_get_address_type(dev);
+        scandata.rssi = bluez_device1_get_rssi(dev);
 
 
+#ifdef BLE_DEBUG
+        LE_DEBUG("-----> added device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
+#endif
 
-        LE_INFO("-----> added device addr: %s (%s), with RSSI %d, and name: %s", deviceAddr,deviceAddrType, deviceRSSI, deviceName);
+        if(updateCallback != NULL) {
+            updateCallback(&scandata);
+        } else {
+            LE_WARN("Callback for BLE scan update is not set. No Action happened.");
+        }
         g_clear_object(&dev);
 
 
@@ -164,12 +144,59 @@ static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *ob
 
 
 static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
+    // FUNC_CALL_DEBUG;
+#ifdef BLE_DEBUG
     LE_DEBUG("Received \"object-removed\" signal - object_path=%s", g_dbus_object_get_object_path(object));
+#endif
+
+    BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
+    if (dev != NULL) {
+        char *addr = (char *) bluez_device1_get_address(dev);
+
+        if(deleteCallback != NULL) {
+            deleteCallback(addr);
+        } else {
+            LE_WARN("Callback for BLE scan delete is not set. No Action happened.");
+        }
+        g_clear_object(&dev);
+    }
+
+
 }
 
+static void AdapterPropertiesChangedHandler( GDBusProxy *proxy, GVariant *changedProperties, GStrv invalidatedProperties, gpointer userData) {
+    FUNC_CALL_DEBUG;
+    LE_DEBUG("%s - AppState=%d", __func__, AppState);
+    if (AppState == APP_STATE_POWERING_ON_ADAPTER)   {
+        GVariant *poweredVal =      g_variant_lookup_value(changedProperties, "Powered", G_VARIANT_TYPE_BOOLEAN);
+        if (poweredVal != NULL) {
+            gboolean powered = g_variant_get_boolean(poweredVal);
+            g_variant_unref(poweredVal);
+            LE_DEBUG("Adapter Powered property = %d", powered);
+            if (powered) {
+                BeginBLEStationSearch();
+            } 
+        }
+    }
+}
+
+static void AdapterFoundHandler(void){
+    FUNC_CALL_DEBUG;
+    // Ensure the adapter is powered on
+    if (!bluez_adapter1_get_powered(AdapterInterface))
+    {
+        AppState = APP_STATE_POWERING_ON_ADAPTER;
+        LE_DEBUG("Adapter not powered - powering on");
+        g_signal_connect(AdapterInterface,"g-properties-changed",G_CALLBACK(AdapterPropertiesChangedHandler), NULL);
+        bluez_adapter1_set_powered(AdapterInterface, TRUE);
+    } else {
+        LE_DEBUG("Adapter already powered");
+        BeginBLEStationSearch();
+    }
+}
 
 static void SearchForAdapter(void) {
-        LE_DEBUG("------->>>> SearchForAdapter()");
+    FUNC_CALL_DEBUG;
 
     AppState = APP_STATE_SEARCHING_FOR_ADAPTER;
     GList *bluezObjects = g_dbus_object_manager_get_objects(BluezObjectManager);
@@ -186,7 +213,7 @@ static void SearchForAdapter(void) {
 
 
 static void BluezObjectManagerCreateCallback(GObject *sourceObject, GAsyncResult *res, gpointer user_data) {
-    LE_DEBUG("------->>>> BluezObjectManagerCreateCallback()");
+    FUNC_CALL_DEBUG;
     GError *error = NULL;
     BluezObjectManager = g_dbus_object_manager_client_new_for_bus_finish(res, &error);
     LE_FATAL_IF(error != NULL, "Couldn't create Bluez object manager - %s", error->message);
@@ -199,7 +226,8 @@ static void BluezObjectManagerCreateCallback(GObject *sourceObject, GAsyncResult
 
 
 static void GlibInit(void *deferredArg1, void *deferredArg2) {
-    GMainLoop *glibMainLoop = g_main_loop_new(NULL, FALSE);
+//    GMainLoop *glibMainLoop = g_main_loop_new(NULL, FALSE);
+    glibMainLoop = g_main_loop_new(NULL, FALSE);
 
     int legatoEventLoopFd = le_event_GetFd();
     GIOChannel *channel = g_io_channel_unix_new(legatoEventLoopFd);
@@ -223,7 +251,17 @@ static void GlibInit(void *deferredArg1, void *deferredArg2) {
     LE_FATAL("GLib main loop has returned");
 }
 
-int yel_ble_setupScan() {
+
+void yel_ble_stopScan() {
+    g_main_loop_quit(glibMainLoop);
+}
+
+int yel_ble_startScan() {
     le_event_QueueFunction(GlibInit, NULL, NULL);
     return 0;
+}
+
+void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb, DeviceDelete_Callback_t deleteCb) {
+    updateCallback = updateCb;
+    deleteCallback = deleteCb;
 }
