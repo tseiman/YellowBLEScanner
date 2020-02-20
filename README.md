@@ -32,7 +32,8 @@ $ export MY_MANGOH_YELLOW_SYSTEM=/home/user/mangOH-workspace/mangOH/
 ```
 8. build the application: 
 ```bash
-mkapp ${LEGATO_DEF_FILE} -s components -t ${LEGATO_TARGET} -w ${LEGATO_OBJECT_DIR} -o ${LEGATO_OUTPUT_DIR} --interface-search=${LEGATO_ROOT}/apps/sample/dataHub \
+mkapp ${LEGATO_DEF_FILE} -s components -t ${LEGATO_TARGET} -w ${LEGATO_OBJECT_DIR} \
+-o ${LEGATO_OUTPUT_DIR} --interface-search=${LEGATO_ROOT}/apps/sample/dataHub \
 --component-search=${MY_MANGOH_YELLOW_SYSTEM}/components/  YellowBLEScanner.adef
 ```
 9. install the app 
