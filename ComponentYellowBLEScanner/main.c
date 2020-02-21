@@ -29,14 +29,17 @@ void processJSONOutput(char *json) {
 
 void updateBLEEntry(struct BLE_Scan_s *scan) {
     char *buffer;
-    asprintf(&buffer,"{ 'type' : 'update', 'addr': '%s', 'addrtype' : '%s', 'rssi': %d, 'name': '%s'}", scan->addr,scan->type, scan->rssi, scan->name);
+    asprintf(&buffer,"{ \"type\" : \"update\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
     yel_queue_json_event(buffer);
     free(buffer);
 //    LE_DEBUG("Updating/adding BLE Address: %s (%s), with RSSI %d, and name: %s", scan->addr,scan->type, scan->rssi, scan->name);
 }
 
 void deleteBLEEntry(char *addr) {
-    LE_DEBUG("Deleting BLE Address: %s", addr);
+    char *buffer;
+    asprintf(&buffer,"{ \"type\" : \"delete\", \"addr\": \"%s\"}", addr);
+    yel_queue_json_event(buffer);
+    free(buffer);
 }
 
 COMPONENT_INIT { 
