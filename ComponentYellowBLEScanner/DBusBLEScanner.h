@@ -18,8 +18,8 @@
 
 #include <glib.h>
 
-#ifndef HAVE_DBUS_BLE_SCANNER
-#define HAVE_DBUS_BLE_SCANNER 1
+#ifndef HAVE_DBUS_BLE_SCANNER_H
+#define HAVE_DBUS_BLE_SCANNER_H 1
 
 /* a newly scanned device can be stored in this structure */
 struct BLE_Scan_s {
