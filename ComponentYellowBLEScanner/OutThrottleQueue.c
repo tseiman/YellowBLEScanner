@@ -75,6 +75,36 @@ void periodicalQueueCheck()  {
     }
 }
 
+
+/** ------------------------------------------------------------------------
+ *
+ * this changes the queue process Timer value. Smaller timer value gives 
+ * instant results but might overload Octave engine, lager values give 
+ * delays in scanns results but protects the Octave engine better
+ *
+ * @param msec          the timer value in milliseconds
+ *
+ * ------------------------------------------------------------------------     
+ */
+void yel_queue_updateTimer(int msec) {
+    int timer_time = msec;
+    if(timer_time < QUEUE_TIMER_MS_MIN) timer_time = QUEUE_TIMER_MS_MIN;
+    le_timer_SetMsInterval(queueTimer, QUEUE_TIMER_MS_DEFAULT);  
+}
+
+/** ------------------------------------------------------------------------
+ *
+ * this polls the queue length for statisitcal reasons. This can be a help
+ * to determine if there is an issue/overload with the queing system
+ *
+ * @return           the queue length
+ *
+ * ------------------------------------------------------------------------     
+ */
+size_t yel_queue_length() {
+    return le_sls_NumLinks(&queueList);
+}
+
 /** ------------------------------------------------------------------------
  *
  * This is feeding the event queue with JSON data. It is callend on every
@@ -128,7 +158,7 @@ void yel_queue_init(JSON_Push_Callback_t callbk) {
     queueTimer = le_timer_Create("pushDatafromQueueTimer");       
     le_timer_SetHandler(queueTimer, periodicalQueueCheck); 
     le_timer_SetRepeat(queueTimer, 0);                           
-    le_timer_SetMsInterval(queueTimer, QUEUE_TIMER_MS);  
+    le_timer_SetMsInterval(queueTimer, QUEUE_TIMER_MS_DEFAULT);  
     le_timer_Start(queueTimer);
 
 }
@@ -158,3 +188,4 @@ void yel_queue_stop() {
     }
 
 } 
+/* END */

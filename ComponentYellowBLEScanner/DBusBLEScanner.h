@@ -22,7 +22,7 @@
 #define HAVE_DBUS_BLE_SCANNER_H 1
 
 /* kind of scan update */
-typedef enum {NEW, UPDATE, DELETE} Scan_Update_t;
+typedef enum {EMPTY, NEW, UPDATE, DELETE} Scan_Update_t;
 
 /* a newly scanned device can be stored in this structure */
 struct BLE_Scan_s {
@@ -44,3 +44,5 @@ int yel_ble_startScan(void);
 void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb);
 
 #endif 
+
+/* END */

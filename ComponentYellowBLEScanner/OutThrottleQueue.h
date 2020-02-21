@@ -1,4 +1,3 @@
-
 /* ***************************************************************************
  *
  * Thomas Schmidt, 2020
@@ -23,7 +22,8 @@
 #define MAX_QUEUE_DATA_MEM_POOL_SIZE 10
 #define DEFAULT_LARGE_STRING_POOL_SIZE 1024
 
-#define QUEUE_TIMER_MS 500
+#define QUEUE_TIMER_MS_DEFAULT 500
+#define QUEUE_TIMER_MS_MIN 1
 
 typedef struct {
     char *json;
@@ -32,11 +32,13 @@ typedef struct {
 
 typedef void (*JSON_Push_Callback_t)(char *json);
 
-void yel_queue_json_event(char *json);
-
-void yel_queue_init(JSON_Push_Callback_t callbk);
-
-void yel_queue_stop(void);
+void    yel_queue_json_event(char *json);
+void    yel_queue_updateTimer(int msec);
+size_t  yel_queue_length(void);
+void    yel_queue_init(JSON_Push_Callback_t callbk);
+void    yel_queue_stop(void);
 
 
 #endif
+
+/* END */

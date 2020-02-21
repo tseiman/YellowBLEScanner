@@ -40,9 +40,13 @@ char *scanToJSON(struct BLE_Scan_s *scan) {
         asprintf(&buffer,"{ \"type\" : \"new\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
     } else if (scan->updateType == UPDATE) {
         asprintf(&buffer,"{ \"type\" : \"update\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
+    } else if (scan->updateType == EMPTY) {
+        asprintf(&buffer,"{ \"type\" : \"empty\", \"addr\": \"\", \"addrtype\" : \"\", \"rssi\": 0, \"name\": \"\"}");
     } else {
         asprintf(&buffer,"{ \"type\" : \"delete\", \"addr\": \"%s\"}", scan->addr);
     }
  
     return buffer;
 }
+
+/* END */

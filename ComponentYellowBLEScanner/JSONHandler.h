@@ -25,3 +25,5 @@ char *scanToJSON(struct BLE_Scan_s *scan);
 
 
 #endif
+
+/* END */

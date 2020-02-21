@@ -150,6 +150,7 @@ static void BeginBLEStationSearch(void) {
         BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(obj, "org.bluez.Device1"));
         if (dev != NULL)    {
             struct BLE_Scan_s scandata;
+            scandata.updateType = NEW;
             scandata.name = (char *) bluez_device1_get_name(dev);
             scandata.addr = (char *) bluez_device1_get_address(dev);
             scandata.type = (char *) bluez_device1_get_address_type(dev);
@@ -431,7 +432,7 @@ static void BluezObjectManagerCreateCallback(GObject *sourceObject, GAsyncResult
  * ------------------------------------------------------------------------     
  */
 static void GlibInit(void *deferredArg1, void *deferredArg2) {
-//    GMainLoop *glibMainLoop = g_main_loop_new(NULL, FALSE);
+    GError *error = NULL;
     glibMainLoop = g_main_loop_new(NULL, FALSE);
 
     int legatoEventLoopFd = le_event_GetFd();
@@ -453,7 +454,10 @@ static void GlibInit(void *deferredArg1, void *deferredArg2) {
 
     g_main_loop_run(glibMainLoop);
 
-    LE_FATAL("GLib main loop has returned");
+    LE_WARN("GLib main loop has returned");
+
+    bluez_adapter1_call_stop_discovery_sync(AdapterInterface, NULL, &error);
+    LE_WARN_IF(error != NULL, "Couldn't stop discovery - %s", error->message);
 }
 
 /** ------------------------------------------------------------------------
@@ -463,6 +467,8 @@ static void GlibInit(void *deferredArg1, void *deferredArg2) {
  * ------------------------------------------------------------------------     
  */
 void yel_ble_stopScan() {
+    GError *error = NULL;
+    bluez_adapter1_call_stop_discovery_sync(AdapterInterface, NULL, &error);
     g_main_loop_quit(glibMainLoop);
 }
 
@@ -495,3 +501,5 @@ int yel_ble_startScan() {
 void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb) {
     updateCallback = updateCb;
 }
+
+/* END */

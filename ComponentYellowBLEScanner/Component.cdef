@@ -41,4 +41,5 @@ sources:
 	DBusBLEScanner.c
 	OutThrottleQueue.c
 	JSONHandler.c
+	DHubIO.c
 }
