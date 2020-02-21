@@ -19,8 +19,10 @@
 #include "interfaces.h"
 #include "DBusBLEScanner.h"
 #include "OutThrottleQueue.h"
+#include "JSONHandler.h"
 
-#include <stdio.h>
+#include <signal.h>
+
 
 
 void processJSONOutput(char *json) {
@@ -28,29 +30,32 @@ void processJSONOutput(char *json) {
 }
 
 void updateBLEEntry(struct BLE_Scan_s *scan) {
-    char *buffer;
-    asprintf(&buffer,"{ \"type\" : \"update\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
+    char *buffer = scanToJSON(scan);    
     yel_queue_json_event(buffer);
     free(buffer);
-//    LE_DEBUG("Updating/adding BLE Address: %s (%s), with RSSI %d, and name: %s", scan->addr,scan->type, scan->rssi, scan->name);
 }
 
-void deleteBLEEntry(char *addr) {
-    char *buffer;
-    asprintf(&buffer,"{ \"type\" : \"delete\", \"addr\": \"%s\"}", addr);
-    yel_queue_json_event(buffer);
-    free(buffer);
+
+static void main_SigHandler(int signal) {
+        LE_INFO("Stopping and cleaning up Yellow BLE Scanner");
+        yel_ble_stopScan();
+        yel_queue_stop();
 }
+
 
 COMPONENT_INIT { 
-//    le_result_t result;
+    
+    le_sig_Block(SIGINT);                                                   // catch the termination of the Application
+    le_sig_SetEventHandler(SIGINT, main_SigHandler);                        // to clean up allocated resources
+    le_sig_Block(SIGTERM);                                                  
+    le_sig_SetEventHandler(SIGTERM, main_SigHandler);                      
 
     LE_INFO("Starting Yellow BLE Scanner");
 
     yel_queue_init(processJSONOutput);
 
 
-    yel_ble_setupScan(updateBLEEntry, deleteBLEEntry);
+    yel_ble_setupScan(updateBLEEntry);
     yel_ble_startScan();
 
 

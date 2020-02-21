@@ -21,23 +21,26 @@
 #ifndef HAVE_DBUS_BLE_SCANNER_H
 #define HAVE_DBUS_BLE_SCANNER_H 1
 
+/* kind of scan update */
+typedef enum {NEW, UPDATE, DELETE} Scan_Update_t;
+
 /* a newly scanned device can be stored in this structure */
 struct BLE_Scan_s {
-    char *addr;
-    char *type;
-    char *name;
-    gint16 rssi;
+    Scan_Update_t   updateType;
+    char            *addr;
+    char            *type;
+    char            *name;
+    gint16          rssi;
 };
 
 /* callback function call definitions called on an a bluetooth scan even */
 typedef void (*DeviceUpdate_Callback_t)(struct BLE_Scan_s *scan);
-typedef void (*DeviceDelete_Callback_t)(char *addr);
 
 /* stop BLE scanning */
 void yel_ble_stopScan(void);
 /* start scanning */
 int yel_ble_startScan(void);
 /* setup the scanner (to be called before startScan()) */ 
-void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb, DeviceDelete_Callback_t deleteCb);
+void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb);
 
 #endif 

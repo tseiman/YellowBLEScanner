@@ -37,7 +37,6 @@ static BluezAdapter1 *AdapterInterface = NULL;
 static BluezDevice1 *BLEStationDeviceInterface = NULL;
 
 static DeviceUpdate_Callback_t updateCallback = NULL;
-static DeviceDelete_Callback_t deleteCallback = NULL;
 
 // static GDBusConnection *con;
 static GMainLoop *glibMainLoop;
@@ -198,6 +197,7 @@ static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *ob
 
         struct BLE_Scan_s scandata;
 
+        scandata.updateType = NEW;
         scandata.name = (char *) bluez_device1_get_name(dev);
         scandata.addr = (char *) bluez_device1_get_address(dev);
         scandata.type = (char *) bluez_device1_get_address_type(dev);
@@ -211,7 +211,7 @@ static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *ob
         if(updateCallback != NULL) {
             updateCallback(&scandata);
         } else {
-            LE_WARN("Callback for BLE scan update is not set. No Action happened.");
+            LE_WARN("Callback for BLE scan is not set. No Action happened.");
         }
         g_clear_object(&dev);
 
@@ -249,7 +249,7 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
     if (dev != NULL)    {
 
         struct BLE_Scan_s scandata;
-
+        scandata.updateType = UPDATE;
         scandata.name = (char *) bluez_device1_get_name(dev);
         scandata.addr = (char *) bluez_device1_get_address(dev);
         scandata.type = (char *) bluez_device1_get_address_type(dev);
@@ -263,7 +263,7 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
         if(updateCallback != NULL) {
             updateCallback(&scandata);
         } else {
-            LE_WARN("Callback for BLE scan update is not set. No Action happened.");
+            LE_WARN("Callback for BLE scan is not set. No Action happened.");
         }
         g_clear_object(&dev);
 
@@ -299,12 +299,18 @@ static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *
 
     BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
     if (dev != NULL) {
-        char *addr = (char *) bluez_device1_get_address(dev);
+        struct BLE_Scan_s scandata;
+        scandata.updateType = DELETE;
+        scandata.name = NULL;
+        scandata.addr = (char *) bluez_device1_get_address(dev);
+        scandata.type = NULL;
+        scandata.rssi = 0;
 
-        if(deleteCallback != NULL) {
-            deleteCallback(addr);
+        
+        if(updateCallback != NULL) {
+            updateCallback(&scandata);
         } else {
-            LE_WARN("Callback for BLE scan delete is not set. No Action happened.");
+            LE_WARN("Callback for BLE scan is not set. No Action happened.");
         }
         g_clear_object(&dev);
     }
@@ -486,7 +492,6 @@ int yel_ble_startScan() {
  *
  * ------------------------------------------------------------------------     
  */
-void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb, DeviceDelete_Callback_t deleteCb) {
+void yel_ble_setupScan(DeviceUpdate_Callback_t updateCb) {
     updateCallback = updateCb;
-    deleteCallback = deleteCb;
 }

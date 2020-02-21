@@ -36,5 +36,7 @@ void yel_queue_json_event(char *json);
 
 void yel_queue_init(JSON_Push_Callback_t callbk);
 
+void yel_queue_stop(void);
+
 
 #endif
