@@ -4,7 +4,7 @@
  *
  * This is part of the YellowBLEScanner Project.
  * YellowBLEScanner is taking BLE scanning data from the mangOH Yellow 
- * BLE Chip and reorts it to the Legato DataHub (Octave).
+ * BLE Chip and reports it to the Legato DataHub (Octave).
  *
  * This file implements the DBUS BlueZ interface to receive BlueZ BLE 
  * Scan events on device updates and device deletions a 

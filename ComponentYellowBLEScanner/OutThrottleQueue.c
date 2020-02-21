@@ -4,7 +4,7 @@
  *
  * This is part of the YellowBLEScanner Project.
  * YellowBLEScanner is taking BLE scanning data from the mangOH Yellow 
- * BLE Chip and reorts it to the Legato DataHub (Octave).
+ * BLE Chip and reports it to the Legato DataHub (Octave).
  *
  * This file implements a throtteling mechanism which is meant to prevent 
  * event overflow in the Octave engine in case of a scan flood. 
