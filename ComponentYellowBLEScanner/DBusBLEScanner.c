@@ -157,7 +157,7 @@ static void BeginBLEStationSearch(void) {
             scandata.rssi = bluez_device1_get_rssi(dev);
 
 #ifdef BLE_DEBUG
-            LE_DEBUG("-----> found device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
+            LE_INFO("-----> found device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
 #endif
             if(updateCallback != NULL) {
                 updateCallback(&scandata);
@@ -190,7 +190,7 @@ static void BeginBLEStationSearch(void) {
 static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
     // FUNC_CALL_DEBUG;
 #ifdef BLE_DEBUG
-    LE_DEBUG("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
+    LE_INFO("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
 #endif
 
     BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
@@ -205,7 +205,7 @@ static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *ob
 
 
 #ifdef BLE_DEBUG
-        LE_DEBUG("-----> added device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
+        LE_INFO("-----> added device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
 #endif
 
         if(updateCallback != NULL) {
@@ -220,12 +220,6 @@ static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *ob
 
 
 }
-
-
-
-
-
-
 
 
 
@@ -263,7 +257,7 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
 
 
 #ifdef BLE_DEBUG
-        LE_DEBUG("-----> changed device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
+        LE_INFO("-----> changed device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
 #endif
 
         if(updateCallback != NULL) {
@@ -300,7 +294,7 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
 static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
     // FUNC_CALL_DEBUG;
 #ifdef BLE_DEBUG
-    LE_DEBUG("Received \"object-removed\" signal - object_path=%s", g_dbus_object_get_object_path(object));
+    LE_INFO("Received \"object-removed\" signal - object_path=%s", g_dbus_object_get_object_path(object));
 #endif
 
     BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
@@ -340,7 +334,7 @@ static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *
  */
 static void AdapterPropertiesChangedHandler( GDBusProxy *proxy, GVariant *changedProperties, GStrv invalidatedProperties, gpointer userData) {
     FUNC_CALL_DEBUG;
-    LE_DEBUG("%s - AppState=%d", __func__, AppState);
+    LE_INFO("%s - AppState=%d", __func__, AppState);
     if (AppState == APP_STATE_POWERING_ON_ADAPTER)   {
         GVariant *poweredVal =      g_variant_lookup_value(changedProperties, "Powered", G_VARIANT_TYPE_BOOLEAN);
         if (poweredVal != NULL) {
@@ -367,11 +361,11 @@ static void AdapterFoundHandler(void){
     if (!bluez_adapter1_get_powered(AdapterInterface))
     {
         AppState = APP_STATE_POWERING_ON_ADAPTER;
-        LE_DEBUG("Adapter not powered - powering on");
+        LE_INFO("Adapter not powered - powering on");
         g_signal_connect(AdapterInterface,"g-properties-changed",G_CALLBACK(AdapterPropertiesChangedHandler), NULL);
         bluez_adapter1_set_powered(AdapterInterface, TRUE);
     } else {
-        LE_DEBUG("Adapter already powered");
+        LE_INFO("Adapter already powered");
         BeginBLEStationSearch();
     }
 }
@@ -483,7 +477,7 @@ int yel_ble_startScan() {
  *
  * An interface function to prepare the BLE scan with callbacks
  *
- * @param updateCb      callback which will be called a new or 
+ * @param updateCb      callback which will be called if a new or 
  *                      updated BLE station is found
  *                               
  * @param deleteCb      callback which is called when the adapter deletes

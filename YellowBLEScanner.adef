@@ -34,20 +34,37 @@ requires:
 	/lib/libmount.so.1 /lib/libmount.so.1
 	/lib/libblkid.so.1 /lib/libblkid.so.1
 	/lib/libuuid.so.1 /lib/libuuid.so.1
-//	/usr/lib/libgio-2.0.so.0.5400.3 
+
+	
+	/var/run/dbus/system_bus_socket /var/run/dbus/system_bus_socket
   }
 
     device:
-    {
+    { 
     }
 }
 bundles:
 {
+	file:
+  {
+  }
+	/*
   file:
   {
-//    [rx] /usr/lib/libgio-2.0.so.0
-//	[rx] /usr/lib/libgio-2.0.so.0.5400.3
+    [rx] /lib/libgio-2.0.so.0
+	[rx] /lib/libgobject-2.0.so.0
+	[rx] /lib/libglib-2.0.so.0
+	[rx] /lib/libffi.so.6
+	[rx] /lib/libgmodule-2.0.so.0
+	[rx] /lib/libpcre.so.1
+	[rx] /lib/libz.so.1
+	[rx] /lib/libresolv.so.2 
+	[rx] /lib/libmount.so.1
+	[rx] /lib/libblkid.so.1
+	[rx] /lib/libuuid.so.1
+	[rw] /dev/null
   }
+  */
 }
 
 version: 1.0.0

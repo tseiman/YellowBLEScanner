@@ -1,8 +1,12 @@
-/*
+
 #include "legato.h"
 #include "interfaces.h"
 
+#include "DHubIO.h"
 
+
+
+/*
 #define COUNTER_NAME "counter/value"
 #define DATA_NAME "data/value"
 

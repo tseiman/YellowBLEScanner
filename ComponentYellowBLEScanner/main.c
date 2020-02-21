@@ -18,9 +18,15 @@
 #include "legato.h"
 #include "interfaces.h"
 #include "DBusBLEScanner.h"
+#include "OutThrottleQueue.h"
+
+#include <stdio.h>
 
 void updateBLEEntry(struct BLE_Scan_s *scan) {
-    LE_DEBUG("Updating/adding BLE Address: %s (%s), with RSSI %d, and name: %s", scan->addr,scan->type, scan->rssi, scan->name);
+    char *buffer;
+    asprintf(&buffer,"{ 'type' : 'update', 'addr': '%s', 'addrtype' : '%s', 'rssi': %d, 'name': '%s'}", scan->addr,scan->type, scan->rssi, scan->name);
+    yel_queue_json_event(buffer);
+//    LE_DEBUG("Updating/adding BLE Address: %s (%s), with RSSI %d, and name: %s", scan->addr,scan->type, scan->rssi, scan->name);
 }
 
 void deleteBLEEntry(char *addr) {
@@ -31,6 +37,9 @@ COMPONENT_INIT {
 //    le_result_t result;
 
     LE_INFO("Starting Yellow BLE Scanner");
+
+    yel_queue_init();
+
 
     yel_ble_setupScan(updateBLEEntry, deleteBLEEntry);
     yel_ble_startScan();

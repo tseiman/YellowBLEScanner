@@ -3,6 +3,8 @@ cflags:
 	-I${LEGATO_SYSROOT}/usr/include/gio-unix-2.0/ 
 	-I${LEGATO_SYSROOT}/usr/include/glib-2.0 
 	-I${LEGATO_SYSROOT}/usr/lib/glib-2.0/include
+//	-DBLE_DEBUG=1	
+	-DQUEUE_DEBUG=1
 }
 ldflags:
 {
@@ -37,4 +39,5 @@ sources:
 {
 	main.c
 	DBusBLEScanner.c
+	OutThrottleQueue.c
 }
