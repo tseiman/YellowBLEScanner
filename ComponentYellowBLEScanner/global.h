@@ -8,7 +8,7 @@
  *
  * This file contains global usefull macrose.
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

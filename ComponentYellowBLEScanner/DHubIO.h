@@ -8,7 +8,7 @@
  *
  * This module implements the interface to the DHUB API.
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

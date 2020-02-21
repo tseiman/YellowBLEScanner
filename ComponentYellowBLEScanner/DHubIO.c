@@ -11,7 +11,7 @@
  * an enable/disable switch and a timer setting for the queue
  * can be set through DataHub
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

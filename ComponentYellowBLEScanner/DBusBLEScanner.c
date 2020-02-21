@@ -10,7 +10,7 @@
  * Scan events on device updates and device deletions a 
  * separeted callback is called.
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

@@ -9,7 +9,7 @@
  *
  * This file contains the header definitions for the JSON handling module
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

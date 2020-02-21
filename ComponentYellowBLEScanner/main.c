@@ -8,7 +8,7 @@
  *
  * This file implements the main routine for the BLE Scanner
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *

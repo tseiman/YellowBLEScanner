@@ -11,7 +11,7 @@
  * Scan events are wrtten to an event queue and processed over time.
  * This equalizes scan bursts.
  * 
- * License: Not Defined Yet
+ * License: Mozilla Public License 2.0
  *
  * Project URL: https://github.com/tseiman/YellowBLEScanner  
  *
