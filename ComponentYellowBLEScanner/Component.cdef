@@ -3,8 +3,9 @@ cflags:
 	-I${LEGATO_SYSROOT}/usr/include/gio-unix-2.0/ 
 	-I${LEGATO_SYSROOT}/usr/include/glib-2.0 
 	-I${LEGATO_SYSROOT}/usr/lib/glib-2.0/include
-//	-DBLE_DEBUG=1	
-	-DQUEUE_DEBUG=1
+//	-DBLE_DEBUG=1
+//	-DJSON_DEBUG=1		
+//	-DQUEUE_DEBUG=1
 }
 ldflags:
 {

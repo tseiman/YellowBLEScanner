@@ -54,6 +54,82 @@ static enum ApplicationState
 
 /** ------------------------------------------------------------------------
  *
+ * gets relevant paremters from DBUS scan object and calls the 
+ * Scan callback function.
+ *
+ * @param object        the DBUS object
+ * @param type          the scantype 
+ *
+ *
+ * @return              true if callback is there, false in case no 
+ *                      callback present
+ *
+ * ------------------------------------------------------------------------     
+ */
+int dhubObj2ScanResult(GDBusObject *object, Scan_Update_t type) {
+
+    BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
+        if (dev != NULL)    {
+            struct BLE_Scan_s scandata;
+            scandata.updateType = type;
+            scandata.name = (type == DELETE) ? NULL : (char *) bluez_device1_get_name(dev);
+            scandata.addr = (char *) bluez_device1_get_address(dev);
+            scandata.type = (type == DELETE) ? NULL : (char *) bluez_device1_get_address_type(dev);
+            scandata.rssi = (type == DELETE) ? 0 : bluez_device1_get_rssi(dev);
+            scandata.mdata = NULL;
+            
+            GVariant *manufacturer_data_variant = bluez_device1_get_manufacturer_data(dev);
+
+        	if (manufacturer_data_variant != NULL) {
+                if (g_variant_n_children(manufacturer_data_variant) == 1) {
+                    GVariant* manufacturer_data_dict = g_variant_get_child_value(manufacturer_data_variant, 0);
+		            GVariantIter *iter;
+		            GVariant* values;
+                    uint16_t manufacturer_id;
+
+		            g_variant_get(manufacturer_data_dict, "{qv}", &manufacturer_id, &values);
+		            scandata.mdata_size = g_variant_n_children(values);
+
+		            scandata.mdata = calloc(scandata.mdata_size, sizeof(guchar));
+		            if (scandata.mdata != NULL) {
+
+		                GVariant* value;
+		                g_variant_get(values, "ay", &iter);
+		                size_t index = 0;
+		                while ((value = g_variant_iter_next_value(iter))) {
+			                g_variant_get(value, "y", &(scandata.mdata)[index++]);
+			                g_variant_unref(value);
+		                }
+		                g_variant_iter_free(iter);
+
+                    } else {
+                        LE_WARN("Running out of memory");
+                        scandata.mdata = NULL;
+                    }
+		        } else {
+                    LE_WARN("Unsupported: Manuafacturer Data with multiple children");
+                }
+            } 
+
+            IF_BLE_DEBUG_INFO("-----> %s device addr: %s (%s), with RSSI %d, and name: %s", SCAN_UPDATE_TYPE_STRING[type], scandata.addr,scandata.type, scandata.rssi, scandata.name);
+
+            if(updateCallback != NULL) {
+                updateCallback(&scandata);
+                if(scandata.mdata) free(scandata.mdata);
+            } else {
+                LE_WARN("Callback for BLE update is not set. No Action happened.");
+            }
+            
+            g_clear_object(&dev);
+
+            return TRUE;
+        } 
+    return FALSE;
+}
+
+
+/** ------------------------------------------------------------------------
+ *
  * This function is to integrate the glib and the legato event loop
  * Specifies the type of function passed to g_io_add_watch() or 
  * g_io_add_watch_full(), which is called when the requested 
@@ -147,25 +223,7 @@ static void BeginBLEStationSearch(void) {
     for (GList *node = bluezObjects; node != NULL && BLEStationDeviceInterface == NULL;  node = node->next) {
         GDBusObject *obj = node->data;
 
-        BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(obj, "org.bluez.Device1"));
-        if (dev != NULL)    {
-            struct BLE_Scan_s scandata;
-            scandata.updateType = NEW;
-            scandata.name = (char *) bluez_device1_get_name(dev);
-            scandata.addr = (char *) bluez_device1_get_address(dev);
-            scandata.type = (char *) bluez_device1_get_address_type(dev);
-            scandata.rssi = bluez_device1_get_rssi(dev);
-
-#ifdef BLE_DEBUG
-            LE_INFO("-----> found device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
-#endif
-            if(updateCallback != NULL) {
-                updateCallback(&scandata);
-            } else {
-                LE_WARN("Callback for BLE scan update is not set. No Action happened.");
-            }
-
-        }
+        dhubObj2ScanResult(obj, NEW);
     }
     g_list_free_full(bluezObjects, g_object_unref);
 }
@@ -188,38 +246,8 @@ static void BeginBLEStationSearch(void) {
  * ------------------------------------------------------------------------     
  */
 static void BluezObjectAddedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
-    // FUNC_CALL_DEBUG;
-#ifdef BLE_DEBUG
-    LE_INFO("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
-#endif
-
-    BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
-    if (dev != NULL)    {
-
-        struct BLE_Scan_s scandata;
-
-        scandata.updateType = NEW;
-        scandata.name = (char *) bluez_device1_get_name(dev);
-        scandata.addr = (char *) bluez_device1_get_address(dev);
-        scandata.type = (char *) bluez_device1_get_address_type(dev);
-        scandata.rssi = bluez_device1_get_rssi(dev);
-
-
-#ifdef BLE_DEBUG
-        LE_INFO("-----> added device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
-#endif
-
-        if(updateCallback != NULL) {
-            updateCallback(&scandata);
-        } else {
-            LE_WARN("Callback for BLE scan is not set. No Action happened.");
-        }
-        g_clear_object(&dev);
-
-
-    }
-
-
+    IF_BLE_DEBUG_INFO("Received \"object-added\" signal - object_path=%s, state=%d", g_dbus_object_get_object_path(object), AppState);
+    dhubObj2ScanResult(object, NEW);
 }
 
 
@@ -244,33 +272,7 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
                                       const gchar *const *invalidated_properties,
                                       gpointer user_data) {
 
-
-                                                      
-    BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(G_DBUS_OBJECT (object_proxy), "org.bluez.Device1"));
-    if (dev != NULL)    {
-
-        struct BLE_Scan_s scandata;
-        scandata.updateType = UPDATE;
-        scandata.name = (char *) bluez_device1_get_name(dev);
-        scandata.addr = (char *) bluez_device1_get_address(dev);
-        scandata.type = (char *) bluez_device1_get_address_type(dev);
-        scandata.rssi = bluez_device1_get_rssi(dev);
-
-
-#ifdef BLE_DEBUG
-        LE_INFO("-----> changed device addr: %s (%s), with RSSI %d, and name: %s", scandata.addr,scandata.type, scandata.rssi, scandata.name);
-#endif
-
-        if(updateCallback != NULL) {
-            updateCallback(&scandata);
-        } else {
-            LE_WARN("Callback for BLE scan is not set. No Action happened.");
-        }
-        g_clear_object(&dev);
-
-
-    }
-
+    dhubObj2ScanResult(G_DBUS_OBJECT (object_proxy), UPDATE);
 }
 
 
@@ -293,30 +295,8 @@ static void BluezObjectChangedHandler(GDBusObjectManagerClient *manager,
  * ------------------------------------------------------------------------     
  */
 static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *object, gpointer userData) {
-    // FUNC_CALL_DEBUG;
-#ifdef BLE_DEBUG
-    LE_INFO("Received \"object-removed\" signal - object_path=%s", g_dbus_object_get_object_path(object));
-#endif
-
-    BluezDevice1* dev = BLUEZ_DEVICE1(g_dbus_object_get_interface(object, "org.bluez.Device1"));
-    if (dev != NULL) {
-        struct BLE_Scan_s scandata;
-        scandata.updateType = DELETE;
-        scandata.name = NULL;
-        scandata.addr = (char *) bluez_device1_get_address(dev);
-        scandata.type = NULL;
-        scandata.rssi = 0;
-
-        
-        if(updateCallback != NULL) {
-            updateCallback(&scandata);
-        } else {
-            LE_WARN("Callback for BLE scan is not set. No Action happened.");
-        }
-        g_clear_object(&dev);
-    }
-
-
+    IF_BLE_DEBUG_INFO("Received \"object-removed\" signal - object_path=%s", g_dbus_object_get_object_path(object));
+    dhubObj2ScanResult(object, DELETE);       
 }
 
 
@@ -342,7 +322,7 @@ static void BluezObjectRemovedHandler(GDBusObjectManager *manager, GDBusObject *
 static void AdapterPropertiesChangedHandler( GDBusProxy *proxy, GVariant *changedProperties, GStrv invalidatedProperties, gpointer userData) {
     FUNC_CALL_DEBUG;
     LE_INFO("%s - AppState=%d", __func__, AppState);
-    if (AppState == APP_STATE_POWERING_ON_ADAPTER)   {
+    if (AppState == APP_STATE_POWERING_ON_ADAPTER) {
         GVariant *poweredVal =      g_variant_lookup_value(changedProperties, "Powered", G_VARIANT_TYPE_BOOLEAN);
         if (poweredVal != NULL) {
             gboolean powered = g_variant_get_boolean(poweredVal);
@@ -365,8 +345,7 @@ static void AdapterPropertiesChangedHandler( GDBusProxy *proxy, GVariant *change
 static void AdapterFoundHandler(void){
     FUNC_CALL_DEBUG;
     // Ensure the adapter is powered on
-    if (!bluez_adapter1_get_powered(AdapterInterface))
-    {
+    if (!bluez_adapter1_get_powered(AdapterInterface)) {
         AppState = APP_STATE_POWERING_ON_ADAPTER;
         LE_INFO("Adapter not powered - powering on");
         g_signal_connect(AdapterInterface,"g-properties-changed",G_CALLBACK(AdapterPropertiesChangedHandler), NULL);
@@ -398,11 +377,6 @@ static void SearchForAdapter(void) {
         AdapterFoundHandler();
     }
 }
-
-
-
-
-
 
 /** ------------------------------------------------------------------------
  *

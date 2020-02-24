@@ -21,6 +21,14 @@
 #ifndef HAVE_JSON_HANDLER_H
 #define HAVE_JSON_HANDLER_H 1
 
+
+#ifdef JSON_DEBUG
+#define IF_JSON_DEBUG_INFO(fmt, ...) LE_INFO(fmt, ## __VA_ARGS__);
+#else
+#define IF_JSON_DEBUG_INFO(fmt, ...)
+#endif
+
+
 char *scanToJSON(struct BLE_Scan_s *scan);
 
 

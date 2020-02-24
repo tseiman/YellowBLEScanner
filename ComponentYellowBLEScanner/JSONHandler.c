@@ -28,25 +28,37 @@
  *
  * @param scan          the struct with the scan information
  *
- * @return              A pointer to an allocated buffer with the JSON
+ * @return              A pointer to an allocated result_buffer with the JSON
  *                      string.
  *
  * ------------------------------------------------------------------------     
  */
 char *scanToJSON(struct BLE_Scan_s *scan) {
-    char *buffer = NULL;
+    char *result_buffer = NULL;
+    char *manufacturer_data_buffer = NULL;
+    
+    if((scan->mdata_size > 0) && (scan->mdata != NULL)) {                   // converting the binary manufacturer data to hex string 
+        manufacturer_data_buffer = malloc(scan->mdata_size * 2 +1);
+        LE_ASSERT(manufacturer_data_buffer != NULL);
+        memset(manufacturer_data_buffer,0,scan->mdata_size * 2 +1);
+
+        for(int i = 0; i < scan->mdata_size; ++i) {
+            sprintf(manufacturer_data_buffer + (2 * i), "%02X", scan->mdata[i]);
+        }
+    }
 
     if(scan->updateType == NEW) {
-        asprintf(&buffer,"{ \"type\" : \"new\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
+        asprintf(&result_buffer,"{ \"type\" : \"new\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\", \"mdata\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name, manufacturer_data_buffer);
     } else if (scan->updateType == UPDATE) {
-        asprintf(&buffer,"{ \"type\" : \"update\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name);
+        asprintf(&result_buffer,"{ \"type\" : \"update\", \"addr\": \"%s\", \"addrtype\" : \"%s\", \"rssi\": %d, \"name\": \"%s\", \"mdata\": \"%s\"}", scan->addr,scan->type, scan->rssi, scan->name, manufacturer_data_buffer);
     } else if (scan->updateType == EMPTY) {
-        asprintf(&buffer,"{ \"type\" : \"empty\", \"addr\": \"\", \"addrtype\" : \"\", \"rssi\": 0, \"name\": \"\"}");
+        asprintf(&result_buffer,"{ \"type\" : \"empty\", \"addr\": \"\", \"addrtype\" : \"\", \"rssi\": 0, \"name\": \"\", \"mdata\": \"\"}");
     } else {
-        asprintf(&buffer,"{ \"type\" : \"delete\", \"addr\": \"%s\"}", scan->addr);
+        asprintf(&result_buffer,"{ \"type\" : \"delete\", \"addr\": \"%s\"}", scan->addr);
     }
  
-    return buffer;
+    if(manufacturer_data_buffer) free(manufacturer_data_buffer);
+    return result_buffer;
 }
 
 /* END */

@@ -60,9 +60,9 @@ void periodicalQueueCheck()  {
 
         if (containerPtr != NULL) {
             if(containerPtr->json != NULL) {
-#ifdef QUEUE_DEBUG
-                LE_INFO("Queue prcessing dataset: %s", containerPtr->json);
-#endif
+
+                IF_QUEUE_DEBUG_INFO("Queue prcessing dataset: %s", containerPtr->json);
+
                 if(callback != NULL) { 
                     callback(containerPtr->json);
                 } else {
@@ -73,6 +73,7 @@ void periodicalQueueCheck()  {
             le_mem_Release(containerPtr);
         }
     }
+
 }
 
 
@@ -120,9 +121,9 @@ size_t yel_queue_length() {
  */
 void yel_queue_json_event(char *json) {
     char *jsonBuffer = NULL;
-#ifdef QUEUE_DEBUG
-    LE_INFO("Got JSON Event: %s", json);
-#endif
+
+    IF_QUEUE_DEBUG_INFO("Got JSON Event: %s", json);
+
     QueueContainer_t* containerPtr;
     LE_ASSERT((jsonBuffer = le_mem_StrDup(queueDataPool,json)) != NULL);
 

@@ -25,6 +25,12 @@
 #define QUEUE_TIMER_MS_DEFAULT 500
 #define QUEUE_TIMER_MS_MIN 1
 
+#ifdef QUEUE_DEBUG
+#define IF_QUEUE_DEBUG_INFO(fmt, ...) LE_INFO(fmt, ## __VA_ARGS__);
+#else
+#define IF_QUEUE_DEBUG_INFO(fmt, ...)
+#endif
+
 typedef struct {
     char *json;
     le_sls_Link_t nextLink;

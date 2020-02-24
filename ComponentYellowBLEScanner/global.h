@@ -24,4 +24,12 @@ the callstack for BLE  DBUS Scanner */
 #define FUNC_CALL_DEBUG 
 #endif
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 /* END */
